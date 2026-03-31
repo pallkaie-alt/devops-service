@@ -97,6 +97,7 @@ app := &App{
 
 // Loo ruuter ServeMux
 	mux := http.NewServeMux()
+	mux.Handle("/", LoggingMiddleware(yourHandler))
 
 	// Registreeri handlerid ja mhi need Middleware'i sisse [cite: 43-49, 53]
     // Kuna need on meetodid, kasutame app.helloHandler
@@ -123,8 +124,18 @@ app := &App{
     quit := make(chan os.Signal, 1)
     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
     <-quit
-    log.Println("Serverit sulgemas...")
+    log.Println("Closing server in 10 seconds...")
 
+	// creating new 'context' with short waiting time.
+    ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+    defer cancel() // hea praktika on vabastada
+
+	// Graceful shutdown – annab serverile 10 sekundit aktiivsete päringute lõpetamiseks
+    if err := srv.Shutdown(ctx); err != nil {
+        log.Printf("Server shutdown error: %v", err)
+    } else {
+        log.Println("Server was shut down safely.")
+    }
 }
 // Abifunktsioon vaikeväärtuste haldamiseks
 func getEnv(key, fallback string) string {
