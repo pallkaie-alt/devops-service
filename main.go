@@ -84,6 +84,25 @@ func RecoveryMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+// CORSMiddleware lisab vajalikud päised ja vastab OPTIONS päringutele
+
+func CORSMiddleware(next http.Handler, origin string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Seame lubatud päritolu vastavalt konfiguratsioonile 
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+		// Kui on OPTIONS päring (preflight), vastame kohe 204-ga
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		// Muul juhul liigume järgmise mähise juurde
+		next.ServeHTTP(w, r)
+	})
+}
 
 func main() {
 	app := &App{
@@ -102,8 +121,18 @@ func main() {
     mux.HandleFunc("/ready", app.readyHandler)
 
     // Wrap mux with middleware. Single logging pass.
-// 2. Seejärel lisame RecoveryMiddleware, et see kaitseks ka logimist ennast.
-finalHandler := RecoveryMiddleware(LoggingMiddleware(mux))
+// chained functions, where recovery midlw. protects also logging.
+// 1. Kõigepealt mähime mux-i logimisse
+loggedMux := LoggingMiddleware(mux)
+
+// 2. Nüüd mähime logitud mux-i CORS-i sisse. 
+// SIIN ongi kaks argumenti: 
+// 1) loggedMux (http.Handler) 
+// 2) app.AllowOrigin (string)
+corsMux := CORSMiddleware(loggedMux, app.AllowOrigin)
+
+// 3. Ja kõige lõpuks lisame RecoveryMiddleware, et see kaitseks kogu ahelat
+finalHandler := RecoveryMiddleware(corsMux)
 
 	//  Loo eraldi Serveri objekt, et saaksime seda hiljem sujuvalt sulgeda.
     // Kasuta porti oma App struktuurist, lisades ette kooloni!
