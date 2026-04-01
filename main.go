@@ -96,10 +96,7 @@ func main() {
     // Kasuta porti oma App struktuurist, lisades ette kooloni!
 	server := &http.Server{
 		Addr:	":" + app.Port,
-		Handler: wrappedMux,
-		ReadTimeout: 	5 * time.seconds,
-		WriteTimeout: 	10 * time.seconds,
-		IdleTimeout:	15 *time.seconds,
+		Handler: wrappedMux,		
 	}
 
 // Käivita server eraldi gorutiinis
