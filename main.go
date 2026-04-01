@@ -85,9 +85,9 @@ func main() {
 	// Registreeri handlerid ja wrapi need Middleware'i sisse 
     // Kuna need on meetodid, kasutame app.helloWorld
 
-    mux.Handle("/", app.helloWorld)
-	mux.Handle("/health", app.healthHandler)
-    mux.Handle("/ready", app.readyHandler)
+    mux.HandleFunc("/", app.helloWorld)
+	mux.HandleFunc("/health", app.healthHandler)
+    mux.HandleFunc("/ready", app.readyHandler)
 
     // Wrap mux with middleware. Single logging pass.
     wrappedMux := LoggingMiddleware(mux)
