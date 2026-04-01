@@ -20,7 +20,7 @@ type App struct {
 
 	 // Handlers for endpoints. 
 
-	func (a *App) helloHandler(w http.ResponseWriter, r *http.Request) {
+	func (a *App) helloWorld(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Access-Control-Allow-Origin", a.AllowOrigin)
     w.Write([]byte(a.ResponseMessage))
 }
@@ -34,11 +34,6 @@ func (a *App) readyHandler(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusOK) 
     w.Write([]byte("ready"))
 }
- type context timer {
-
- }
-
-
 	// Creating wrapper, 
 	// statusWriter mhib tavalise ResponseWriter-i, et me saaksime staatust logida
 
@@ -49,8 +44,8 @@ type statusWriter struct {
 // Me kirjutame üle WriteHeader meetodi, et salvestada kood enne selle teelesaatmist
 
 func (sw *statusWriter) WriteHeader(statusCode int) {
-    w.status = statusCodecode
-    w.ResponseWriter.WriteHeader(statusCode)
+    sw.status = statusCode
+    sw.ResponseWriter.WriteHeader(statusCode)
 }
 // Handle the rare case where Write is called without WriteHeader (extra safety):
 func (sw *statusWriter) Write(b []byte) (int, error) {
@@ -97,12 +92,11 @@ app := &App{
 
 // Loo ruuter ServeMux
 	mux := http.NewServeMux()
-	mux.Handle("/", LoggingMiddleware(yourHandler))
-
+	
 	// Registreeri handlerid ja mhi need Middleware'i sisse [cite: 43-49, 53]
-    // Kuna need on meetodid, kasutame app.helloHandler
+    // Kuna need on meetodid, kasutame app.helloWorld
 
-    mux.Handle("/", LoggingMiddleware(http.HandlerFunc(app.helloHandler)))
+    mux.Handle("/", LoggingMiddleware(http.HandlerFunc(app.helloWorld)))
 	mux.Handle("/health", LoggingMiddleware(http.HandlerFunc(app.healthHandler)))
     mux.Handle("/ready", LoggingMiddleware(http.HandlerFunc(app.readyHandler)))
 
