@@ -144,7 +144,7 @@ finalHandler := RecoveryMiddleware(corsMux)
 
 // Käivita server eraldi gorutiinis
 	go func() {
-		log.Printf("Server running %s...", app.Port)
+		log.Printf("Server running at localhost: %s ", app.Port)
     if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
         log.Fatalf("ListenAndServe error: %v", err)
     }
