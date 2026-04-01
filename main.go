@@ -77,7 +77,7 @@ func RecoveryMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if rec := recover(); rec != nil {
-				log.Printf("PANIC: %v", rec)
+				log.Printf("PANIC recovered: %v\n", rec)
 				http.Error(w, "Internal server error", http.StatusInternalServerError)
 			}
 		}()
@@ -95,21 +95,22 @@ func main() {
 // Loo ruuter ServeMux
 	mux := http.NewServeMux()
 	
-	// Registreeri handlerid ja wrapi need Middleware'i sisse 
-    // Kuna need on meetodid, kasutame app.helloWorld
+	// Registreeri handler meetodid, kasutame app.helloWorld
 
-    mux.Handle("/", LoggingMiddleware(http.HandlerFunc(app.helloWorld)))
-	mux.Handle("/health", LoggingMiddleware(http.HandlerFunc(app.healthHandler)))
-    mux.Handle("/ready", LoggingMiddleware(http.HandlerFunc(app.readyHandler)))
+    mux.HandleFunc("/", app.helloWorld)
+	mux.HandleFunc("/health", app.healthHandler)
+    mux.HandleFunc("/ready", app.readyHandler)
 
     // Wrap mux with middleware. Single logging pass.
-    wrappedMux := LoggingMiddleware(mux)
+// 2. Seejärel lisame RecoveryMiddleware, et see kaitseks ka logimist ennast.
+finalHandler := RecoveryMiddleware(LoggingMiddleware(mux))
 
 	//  Loo eraldi Serveri objekt, et saaksime seda hiljem sujuvalt sulgeda.
     // Kasuta porti oma App struktuurist, lisades ette kooloni!
+
 	server := &http.Server{
 		Addr:	":" + app.Port,
-		Handler: wrappedMux,		
+		Handler: finalHandler,		
 	}
 
 // Käivita server eraldi gorutiinis
@@ -125,7 +126,7 @@ func main() {
     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
     <-quit
-    log.Println("Closing server in 8 seconds...")
+    log.Println("Closing server in 9 seconds...")
 
 	// creating new 'context' for smooth shutdown in 9 seconds.
     ctx, cancel := context.WithTimeout(context.Background(), 9*time.Second)
