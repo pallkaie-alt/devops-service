@@ -72,6 +72,19 @@ func (sw *statusWriter) Write(b []byte) (int, error) {
 			})
 	}
 
+// Panic recovery (prevents whole-server crash)
+func RecoveryMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rec := recover(); rec != nil {
+				log.Printf("PANIC: %v", rec)
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
 	app := &App{
 		Port:		 		getEnv("PORT", "8000"),
@@ -85,9 +98,9 @@ func main() {
 	// Registreeri handlerid ja wrapi need Middleware'i sisse 
     // Kuna need on meetodid, kasutame app.helloWorld
 
-    mux.HandleFunc("/", app.helloWorld)
-	mux.HandleFunc("/health", app.healthHandler)
-    mux.HandleFunc("/ready", app.readyHandler)
+    mux.Handle("/", LoggingMiddleware(http.HandlerFunc(app.helloWorld)))
+	mux.Handle("/health", LoggingMiddleware(http.HandlerFunc(app.healthHandler)))
+    mux.Handle("/ready", LoggingMiddleware(http.HandlerFunc(app.readyHandler)))
 
     // Wrap mux with middleware. Single logging pass.
     wrappedMux := LoggingMiddleware(mux)
@@ -114,8 +127,8 @@ func main() {
     <-quit
     log.Println("Closing server in 8 seconds...")
 
-	// creating new 'context' for smooth shutdown in 8 seconds.
-    ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	// creating new 'context' for smooth shutdown in 9 seconds.
+    ctx, cancel := context.WithTimeout(context.Background(), 9*time.Second)
     defer cancel() // hea praktika on vabastada
 
 	// Graceful shutdown ooteaeg aktiivsete päringute lõpetamiseks
