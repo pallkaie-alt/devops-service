@@ -16,8 +16,8 @@ type App struct {
     AllowOrigin     string
 }
 
-// statusWriter to reliably capture HTTP status codes for logging,
-// handles WriteHeader and default Write cases.
+/** statusWriter to reliably capture HTTP status codes for logging,
+handles WriteHeader and default Write cases. */
 
 type statusWriter struct {
     http.ResponseWriter
@@ -36,14 +36,15 @@ func (a *App) readyHandler(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusOK) 
     w.Write([]byte("ready"))
 }
-// Creating wrapper methods and MiddleWare 
-// Me kirjutame üle WriteHeader meetodi, et salvestada kood enne selle teelesaatmist
+
+// Overriding the WriteHeader method to save the code before sending it.
 
 func (sw *statusWriter) WriteHeader(statusCode int) {
     sw.status = statusCode
     sw.ResponseWriter.WriteHeader(statusCode)
 }
-// Handle the rare case where Write is called without WriteHeader (extra safety)
+
+// Handle case where Write is called without WriteHeader.
 
 func (sw *statusWriter) Write(b []byte) (int, error) {
     if sw.status == 0 {
@@ -51,9 +52,9 @@ func (sw *statusWriter) Write(b []byte) (int, error) {
     }
     return sw.ResponseWriter.Write(b)
 }
-//* Middleware *//
 
-	func LoggingMiddleware(next http.Handler) http.Handler {
+
+func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
@@ -65,7 +66,6 @@ func (sw *statusWriter) Write(b []byte) (int, error) {
 		// Call the next handler in chain.
 		next.ServeHTTP(sw, r)
 
-		// Nüüd on päring tehtud ja sw.status sisaldab õiget koodi
 		duration := time.Since(start)
 
 		log.Printf("METHOD: %s | PATH: %s | STATUS: %d | DURATION: %v",
@@ -95,7 +95,8 @@ func SecurityMiddleware(next http.Handler) http.Handler {
         next.ServeHTTP(w, r)
     })
 }
-// CORSMiddleware lisab vajalikud päised ja vastab OPTIONS päringutele
+
+// CORSMiddleware adds the necessary headers and responds to OPTIONS requests
 
 func CORSMiddleware(next http.Handler, origin string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -104,13 +105,11 @@ func CORSMiddleware(next http.Handler, origin string) http.Handler {
 		w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
-		// Kui on OPTIONS päring (preflight), vastame kohe 204-ga
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
-		// Muul juhul liigume järgmise mähise juurde
 		next.ServeHTTP(w, r)
 	})
 }
@@ -131,7 +130,9 @@ func main() {
 	mux.HandleFunc("/health", app.healthHandler)
     mux.HandleFunc("/ready", app.readyHandler)
 
-// Chain of func: Recovery -> Logging-> Security -> CORS -> mux routing
+/** Chain of func:
+Srequest-> Recovery -> Logging-> Security -> CORS -> mux routing;
+ and vice-versa to give response out */
 
 loggedMux := LoggingMiddleware(mux)
 
@@ -140,8 +141,6 @@ corsMux := CORSMiddleware(loggedMux, app.AllowOrigin)
 secureMux := SecurityMiddleware(corsMux)
 
 finalHandler := RecoveryMiddleware(secureMux)
-
-
 
 	server := &http.Server{
 		Addr:	":" + app.Port,
@@ -155,6 +154,7 @@ finalHandler := RecoveryMiddleware(secureMux)
     }
 }()
 	
+// Graceful shutdown wait time to complete active requests
 
     quit := make(chan os.Signal, 1)
     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -162,11 +162,11 @@ finalHandler := RecoveryMiddleware(secureMux)
     <-quit
     log.Println("Closing server in 9 seconds...")
 
-	// creating new 'context' for smooth shutdown in 9 seconds.
+	
     ctx, cancel := context.WithTimeout(context.Background(), 9*time.Second)
-    defer cancel() // hea praktika on vabastada
+    defer cancel() 
 
-	// Graceful shutdown ooteaeg aktiivsete päringute lõpetamiseks
+	
     if err := server.Shutdown(ctx); err != nil {
         log.Printf("Server shutdown error: %v", err)
     } else {
@@ -174,7 +174,7 @@ finalHandler := RecoveryMiddleware(secureMux)
     }
 }
 
-// Abifunktsioon vaikeväärtuste haldamiseks
+// Helper function for managing default values
 func getEnv(key, fallback string) string {
     if value, ok := os.LookupEnv(key); ok {
         return value
