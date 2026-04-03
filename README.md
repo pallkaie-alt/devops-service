@@ -87,7 +87,7 @@ curl -v http://localhost:8000/ready
 ##  Collaboration Note
 This Go program was developed with the assistance of artificial intelligence (Gemini) as a consultative partner for structuring code, refining idiomatic Go syntax, and implementing best security practices. All final decisions and code verification were performed by me.
  **My first prompt was:** 1. Be a professional instructor for a junior Java developer coding in GoLang. 2. Provide action plan points to start the project described in the file. 3. Do not write code in advance. 4. Minimal template files: 1) go.mod and 2) main.go are provided. 4. Recommend materials and videos from the web that contain the necessary instructions. Building step-by-step I made many trials and errors during coding first Go HTTP Service.  
-  After coding part was a great challenge on getting Docker working on MacOS 12 Monterey, witch I managed with Copilot guiding during almost 3 hours.
+  Getting Docker working on MacOS 12 Monterey after the coding part was a great challenge, which I managed with Copilot's guidance in almost 3 hours.
 
 Author - Kaie Päll, Junior Developer course student at /kood/Jõhvi 
 04.2026
