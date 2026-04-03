@@ -2,7 +2,8 @@
 
 # Go HTTP Service – Cybernetica Trial Task 2026
 
-This is a minimalist yet production-ready HTTP service created according to the trial task instructions. The service is optimized for security, observability, and smooth management.
+This is a minimal, production-ready HTTP service.    
+The service is optimized for security, observability, and smooth management.
 
 ##  Functionality
 
@@ -22,6 +23,7 @@ The application uses the **"Middleware Onion"** pattern and a **Dependency Injec
 ### Middleware Chain (from inside out):
 1.  **Mux**: Standard Go router.
 2.  **CORS**: Handles `OPTIONS` requests and adds allowed origin headers.
+**CORS Security:** The service supports dynamic origin configuration via the ALLOW_ORIGIN environment variable. While the default is set to `*` for ease of testing, it is recommended to restrict this to specific trusted domains in a production environment to prevent unauthorized cross-origin requests.
 3.  **Security**: Adds critical security headers (`X-Frame-Options`, `CSP`, `X-Content-Type-Options`).
 4.  **Logging**: Measures and logs the entire request lifecycle.
 5.  **Recovery**: The outermost layer that catches all unexpected errors.
@@ -37,16 +39,16 @@ The container is built following the **Multi-stage build** principle to ensure m
 ### Instructions:
 ```bash
 # 1. Build the container
-docker build -t cyber-service .
+docker build -t devops-service .
 
 # 2. Run the container (with default values)
-docker run -p 8000:8000 cyber-service
+docker run -p 8000:8000 devops-service
 
 # 3. Run the container with custom settings
 docker run -p 8080:8080 \
   -e PORT=8080 \
-  -e RESPONSE_MESSAGE="Hello Cybernetica!" \
-  cyber-service
+  -e RESPONSE_MESSAGE="Hello World!" \
+  devops-service
 ```
 
 ## Technical Decisions
