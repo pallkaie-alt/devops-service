@@ -15,13 +15,14 @@ type App struct {
     ResponseMessage string
     AllowOrigin     string
 }
-// statusWriter mhib tavalise ResponseWriter-i, et me saaksime staatust logida
+
+// statusWriter to reliably capture HTTP status codes for logging,
+// handles WriteHeader and default Write cases.
 
 type statusWriter struct {
     http.ResponseWriter
     status int
 }
-// Handlers for endpoints. 
 
 func (a *App) helloWorld(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Access-Control-Allow-Origin", a.AllowOrigin)
@@ -121,38 +122,32 @@ func main() {
 		AllowOrigin:		getEnv("ALLOW_ORIGIN", "*"), 
 }	
 
-// Loo ruuter ServeMux
+
 	mux := http.NewServeMux()
 	
-	// Registreeri handler meetodid, kasutame app.helloWorld
+
 
     mux.HandleFunc("/", app.helloWorld)
 	mux.HandleFunc("/health", app.healthHandler)
     mux.HandleFunc("/ready", app.readyHandler)
 
-    // Wrap mux with middleware. Single logging pass.
-// chained functions, where recovery midlw. protects also logging.
-// 1. Kõigepealt mähime mux-i logimisse
+// Chain of func: Recovery -> Logging-> Security -> CORS -> mux routing
+
 loggedMux := LoggingMiddleware(mux)
 
-// 2. Nüüd mähime logitud mux-i CORS-i sisse. 
-// SIIN ongi kaks argumenti: 
-// 1) loggedMux (http.Handler) 
-// 2) app.AllowOrigin (string)
 corsMux := CORSMiddleware(loggedMux, app.AllowOrigin)
 
-// 3. Ja kõige lõpuks lisame RecoveryMiddleware, et see kaitseks kogu ahelat
-finalHandler := RecoveryMiddleware(corsMux)
+secureMux := SecurityMiddleware(corsMux)
 
-	//  Loo eraldi Serveri objekt, et saaksime seda hiljem sujuvalt sulgeda.
-    // Kasuta porti oma App struktuurist, lisades ette kooloni!
+finalHandler := RecoveryMiddleware(secureMux)
+
+
 
 	server := &http.Server{
 		Addr:	":" + app.Port,
 		Handler: finalHandler,		
 	}
 
-// Käivita server eraldi gorutiinis
 	go func() {
 		log.Printf("Server running at localhost: %s ", app.Port)
     if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -160,7 +155,7 @@ finalHandler := RecoveryMiddleware(corsMux)
     }
 }()
 	
-// Ootame shutdown signaali (Ctrl+C või kill)
+
     quit := make(chan os.Signal, 1)
     signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
@@ -186,4 +181,3 @@ func getEnv(key, fallback string) string {
     }
     return fallback
 }
- 
