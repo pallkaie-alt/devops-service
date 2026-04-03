@@ -1,13 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
-    "os"
+	"os"
 	"os/signal"
-    "time"
-	"context"
 	"syscall"
+	"time"
 )
 
 type App struct {
@@ -147,8 +147,9 @@ finalHandler := RecoveryMiddleware(secureMux)
 		Handler: finalHandler,		
 	}
 
-	go func() {
-		log.Printf("Server running at localhost: %s ", app.Port)
+go func() {
+    log.Printf("Server running on port %s with message: %s", app.Port, app.ResponseMessage)
+    
     if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
         log.Fatalf("ListenAndServe error: %v", err)
     }

@@ -10,7 +10,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o service main.go
 #final stage
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
+
 COPY --from=builder /etc/passwd /etc/passwd
+# path fixed: Match the WORKDIR from builder
 COPY --from=builder /devops-service/service /service
 
 USER nonroot
